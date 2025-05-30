@@ -1,19 +1,61 @@
 stages:
+  - build
+  - push
   - deploy
 
-deploy_manual_job:
-  stage: deploy
-  image: alpine:latest  # Lightweight image with SSH
+variables:
+  REPO: "aayush90"
+  TAG: "latest"
+
+build_job:
+  stage: build
+  image: docker:24.0
+  services:
+    - docker:dind
   before_script:
-    - apk update && apk add --no-cache openssh-client sshpass git
+    - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+  script:
+    - echo "🚀 Building Docker images..."
+    - for SERVICE in frontend backend; do
+        echo "Building $SERVICE image..."
+        docker build -t "$REPO/$SERVICE:$TAG" -f "DevOps/Dockerfile.$SERVICE" . || exit 1
+      done
+  artifacts:
+    paths:
+      - DevOps/docker-compose.yml
+      - DevOps/nginx.conf
+  only:
+    - main
+
+push_job:
+  stage: push
+  image: docker:24.0
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+  script:
+    - echo "📤 Pushing Docker images to Docker Hub..."
+    - for SERVICE in frontend backend; do
+        echo "Pushing $SERVICE image..."
+        docker push "$REPO/$SERVICE:$TAG" || exit 1
+      done
+  dependencies:
+    - build_job
+  only:
+    - main
+
+deploy_job:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk update && apk add --no-cache openssh-client sshpass git docker docker-compose
   script:
     - echo "🚀 Starting deployment on live server 110.34.2.30"
-
     # SSH config setup
     - mkdir -p ~/.ssh
     - echo -e "Host live-server\n  HostName 110.34.2.30\n  Port 23\n  User devops" > ~/.ssh/config
     - chmod 600 ~/.ssh/config
-
     # SSH into the server and run deployment steps
     - |
       sshpass -p "$hsm_server_pwd" ssh -o StrictHostKeyChecking=no devops@110.34.2.30 -p 23 "
@@ -22,12 +64,18 @@ deploy_manual_job:
         mkdir -p /home/hsmdevops/aayushbajracharya90-project
         cd /home/hsmdevops/aayushbajracharya90-project
 
-        echo ' Cloning repository using GitLab access token...'
-        git clone -b main https://oauth2:${hsm_test_repo_token}@gitlab.com/aayushbajracharya90-group/aayushbajracharya90-project.git . || true
+        echo '🧹 Clearing existing directory contents...'
+        rm -rf ./* .git
 
-        echo '🐳 Running deployment script...'
-        chmod +x DevOps/deploy.sh
-        ./DevOps/deploy.sh
+        echo ' Cloning repository using GitLab access token...'
+        git clone -b main https://oauth2:${hsm_test_repo_token}@gitlab.com/aayushbajracharya90-group/aayushbajracharya90-project.git .
+
+        echo '🐳 Deploying with Docker Compose...'
+        docker compose -f DevOps/docker-compose.yml pull
+        docker compose -f DevOps/docker-compose.yml up -d
+
+        echo '🧹 Cleaning up unused Docker resources...'
+        docker system prune -f
 
         echo ' Checking container status...'
         docker ps -a | grep -E 'CONTAINER|aayush-'
@@ -37,6 +85,8 @@ deploy_manual_job:
 
         echo ' Deployment completed on live server.'
       "
+  dependencies:
+    - push_job
   only:
     - main
   when: manual
