@@ -19,11 +19,11 @@ deploy_manual_job:
       sshpass -p "$hsm_server_pwd" ssh -o StrictHostKeyChecking=no devops@110.34.2.30 -p 23 "
         set -e
         echo '🔧 Creating deployment directory...'
-        mkdir -p /home/hsmdevops/library-api-system
-        cd /home/hsmdevops/library-api-system
+        mkdir -p /home/hsmdevops/aayushbajracharya90-project
+        cd /home/hsmdevops/aayushbajracharya90-project
 
         echo ' Cloning repository using GitLab access token...'
-        git clone -b main https://oauth2:${hsm_test_repo_token}@gitlab.com/<your-group>/<your-repo>.git . || true
+        git clone -b main https://oauth2:${hsm_test_repo_token}@gitlab.com/aayushbajracharya90-group/aayushbajracharya90-project.git . || true
 
         echo '🐳 Running deployment script...'
         chmod +x DevOps/deploy.sh
