@@ -27,7 +27,10 @@ SECRET_KEY = 'django-insecure-#ipqde3_+@)1-r0kmbfb+b)n6r&n(9zpgnsv^7sit+40+q1(k1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'aayush.kutumbatech.com.np',
+    '110.34.2.30',
+]
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
@@ -94,10 +97,8 @@ MIDDLEWARE = [
 ]
 # CORS_ALLOWED_ORIGINS = ["http://localhost:5173",]
 CORS_ALLOWED_ORIGINS = [
-    'http://110.34.2.30', 
-    'http://localhost:3000', 
-    'http://localhost', 
-    "http://localhost:5173",
+    'http://aayush.kutumbatech.com.np:5014',
+    'http://110.34.2.30:5014',
 ]
 ROOT_URLCONF = 'mylibrary.urls'
 

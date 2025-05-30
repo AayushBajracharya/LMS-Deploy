@@ -1,8 +1,8 @@
 version: '3.8'
-
 services:
   db:
     image: postgres:15
+    container_name: ayush-db
     environment:
       - POSTGRES_DB=lmss
       - POSTGRES_USER=postgres
@@ -19,11 +19,12 @@ services:
         ipv4_address: 172.22.0.2
 
   backend:
+    container_name: aayush-backend
     build:
       context: ..
       dockerfile: DevOps/Dockerfile.backend
     ports:
-      - "8000:8000"
+      - "5002:8000"
     volumes:
       - ../LMS:/LMS
     environment:
@@ -32,7 +33,7 @@ services:
       - DB_PASSWORD=abc123
       - DB_HOST=db
       - DB_PORT=5432
-      - DJANGO_SETTINGS_MODULE=mylibrary.settings  
+      - DJANGO_SETTINGS_MODULE=mylibrary.settings
     depends_on:
       db:
         condition: service_healthy
@@ -43,11 +44,12 @@ services:
       sh -c "export PYTHONPATH=/LMS/Library_api_system:$PYTHONPATH && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
 
   frontend:
+    container_name: aayush-frontend
     build:
       context: ..
       dockerfile: DevOps/Dockerfile.frontend
     ports:
-      - "3000:80"
+      - "5014:80"
     depends_on:
       backend:
         condition: service_started
@@ -57,8 +59,9 @@ services:
 
   nginx:
     image: nginx:latest
+    container_name: aayush-nginx
     ports:
-      - "80:80"
+      - "5005:80"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     depends_on:

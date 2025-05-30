@@ -4,7 +4,7 @@ set -e
 # Variables
 REPO="aayush90"
 TAG="latest"
-SERVICES=("frontend" "backend" "sqlserver")
+SERVICES=("frontend" "backend" "postgres")
 
 # Authenticate with Docker Hub
 echo "Logging into Docker Hub..."
@@ -21,10 +21,17 @@ for SERVICE in "${SERVICES[@]}"; do
   fi
   # Build
   echo "Building $SERVICE image..."
-  docker build -t "$IMG" -f "Dockerfile.$SERVICE" .. || { echo "Failed to build $SERVICE"; exit 1; }
-  # Push
-  echo "Pushing $SERVICE image to Docker Hub..."
-  docker push "$IMG" || { echo "Failed to push $SERVICE"; exit 1; }
+  if [ "$SERVICE" = "postgres" ]; then
+    # Use official PostgreSQL image instead of building a custom one
+    echo "Skipping build for $SERVICE, using official image..."
+  else
+    docker build -t "$IMG" -f "Dockerfile.$SERVICE" . || { echo "Failed to build $SERVICE"; exit 1; }
+  fi
+  # Push (only for custom-built images)
+  if [ "$SERVICE" != "postgres" ]; then
+    echo "Pushing $SERVICE image to Docker Hub..."
+    docker push "$IMG" || { echo "Failed to push $SERVICE"; exit 1; }
+  fi
 done
 
 # Deploy with Docker Compose

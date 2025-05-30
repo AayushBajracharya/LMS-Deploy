@@ -41,7 +41,7 @@ const AuthRoute: React.FC<AuthRouteProps> = ({ type }) => {
   if (isChecking) return <div>Loading...</div>;
 
   if (type === 'protected' && !tokens) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return <Navigate to="/" replace state={{ from: location }} />;
   }
 
   if (type === 'public' && tokens) {
