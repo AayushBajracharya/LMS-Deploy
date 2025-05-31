@@ -13,12 +13,12 @@ build_job:
   services:
     - docker:dind
   before_script:
-    - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
   script:
     - echo "🚀 Building Docker images..."
     - for SERVICE in frontend backend; do
         echo "Building $SERVICE image..."
-        docker build -t "$REPO/$SERVICE:$TAG" -f "DevOps/Dockerfile.$SERVICE" . || exit 1
+        docker build -t "$REPO/$SERVICE:$TAG" -f "DevOps/Dockerfile.$SERVICE" . || { echo "Failed to build $SERVICE"; exit 1; }
       done
   artifacts:
     paths:
@@ -33,12 +33,12 @@ push_job:
   services:
     - docker:dind
   before_script:
-    - docker login -u "$DOCKERHUB_USERNAME" -p "$DOCKERHUB_PASSWORD"
+    - echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
   script:
     - echo "📤 Pushing Docker images to Docker Hub..."
     - for SERVICE in frontend backend; do
         echo "Pushing $SERVICE image..."
-        docker push "$REPO/$SERVICE:$TAG" || exit 1
+        docker push "$REPO/$SERVICE:$TAG" || { echo "Failed to push $SERVICE"; exit 1; }
       done
   dependencies:
     - build_job
@@ -61,14 +61,17 @@ deploy_job:
       sshpass -p "$hsm_server_pwd" ssh -o StrictHostKeyChecking=no devops@110.34.2.30 -p 23 "
         set -e
         echo '🔧 Creating deployment directory...'
-        mkdir -p /home/hsmdevops/aayushbajracharya90-project
-        cd /home/hsmdevops/aayushbajracharya90-project
+        mkdir -p /home/hsmdevops/LMS-Deploy
+        cd /home/hsmdevops/LMS-Deploy
 
         echo '🧹 Clearing existing directory contents...'
         rm -rf ./* .git
 
         echo ' Cloning repository using GitLab access token...'
-        git clone -b main https://oauth2:${hsm_test_repo_token}@gitlab.com/aayushbajracharya90-group/aayushbajracharya90-project.git .
+        git clone -b main https://oauth2:${hsm_test_repo_token}@gitlab.com/aayushbajracharya90-group/LMS-Deploy.git .
+
+        echo '🧹 Cleaning up existing Docker network...'
+        docker network rm app_network || true
 
         echo '🐳 Deploying with Docker Compose...'
         docker compose -f DevOps/docker-compose.yml pull

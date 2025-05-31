@@ -97,8 +97,8 @@ MIDDLEWARE = [
 ]
 # CORS_ALLOWED_ORIGINS = ["http://localhost:5173",]
 CORS_ALLOWED_ORIGINS = [
-    'http://aayush.kutumbatech.com.np:5014',
-    'http://110.34.2.30:5014',
+    'http://aayush.kutumbatech.com.np:5005',
+    'http://110.34.2.30:5005',
 ]
 ROOT_URLCONF = 'mylibrary.urls'
 
